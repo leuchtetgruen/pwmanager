@@ -22,6 +22,8 @@ a look at the source yourself and see if it meets your security needs. (Don't wo
 Installation
 ------------
 
+You'll need a unix (preferrably an OS X), a current ruby (I use 2.0.0) and a terminal
+
 * download the tool
 * chmod +x pwmanager
 * ./pwmanager
