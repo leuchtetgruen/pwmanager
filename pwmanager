@@ -9,7 +9,7 @@ require 'socket'
 require 'io/console'
 
 PORT = 2000
-DESCRIPTION = "This JSON file contains AES-256-CBC-encrypted passwords. The IV is contained base64-encoded in this file. The key is tha SHA256-Digest of your master-password."
+DESCRIPTION = "This JSON file contains AES-256-CBC-encrypted passwords. The IV is contained base64-encoded in this file. The key is the SHA256-Digest of your master-password."
 
 # ---- FUNCTIONS ----
 class Hash
