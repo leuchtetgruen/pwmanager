@@ -1,0 +1,322 @@
+#!/usr/bin/env ruby
+
+require "openssl"
+require 'digest/sha2'
+require 'base64'
+require 'json'
+require 'optparse'
+require 'socket'
+require 'io/console'
+
+PORT = 2000
+DESCRIPTION = "This JSON file contains AES-256-CBC-encrypted passwords. The IV is contained base64-encoded in this file. The key is tha SHA256-Digest of your master-password."
+
+# ---- FUNCTIONS ----
+class Hash
+	def hmap(&block)
+		self.inject({}){ |hash,(k,v)| hash.merge( block.call(k,v) ) }
+	end
+end
+
+class String
+	def to_hex 
+		self.each_byte.map { |b| 
+			s = b.to_s(16) 
+			s = "0#{s}" if (s.length < 2)
+			s
+		}.join
+	end
+end
+
+def password_to_key(password)
+	digest = Digest::SHA256.new
+	digest.update(password)
+	return digest.digest
+end
+
+def create_cipher
+	return OpenSSL::Cipher.new('AES-256-CBC')
+end
+
+def encrypt(string, password, iv)
+
+	cipher = create_cipher
+	cipher.encrypt
+	cipher.iv = iv
+	cipher.key = password_to_key(password)
+	enc = cipher.update(string)
+	enc << cipher.final
+
+	return Base64.encode64(enc)
+end
+
+
+def decrypt(data, password, iv)
+	cipher = create_cipher
+	cipher.decrypt
+	cipher.iv = iv
+	cipher.key = password_to_key(password)
+
+	dec = cipher.update(Base64.decode64(data))
+	dec << cipher.final
+
+	return dec
+end
+
+def write_file(data_hash, password, filename)
+	File.open(filename, 'w') { |f| f.write(encrypt_data(data_hash, password)) }
+end
+
+def encrypt_data(data_hash, password)
+	iv = create_cipher.random_iv
+
+	encrypted_hash = data_hash.hmap { |k,v|
+		{ k => encrypt(v, password, iv) }
+	}
+
+	encrypted_hash["iv"] = Base64.encode64(iv)
+	encrypted_hash["description"] = DESCRIPTION
+
+	encrypted_hash.to_json
+end
+
+def read_file(filename, password)
+	s_json = File.read(filename)
+	return read_string(s_json, password)
+end
+
+def read_string(string, password)
+	encrypted_hash = JSON.parse(string)
+
+	cipher = create_cipher
+	iv = Base64.decode64(encrypted_hash['iv'])
+
+	encrypted_hash = encrypted_hash.reject { |k,v | ((k == "iv") || (k == "description" )) }
+
+	decrypted_hash = encrypted_hash.hmap { |k,v|
+		{ k => decrypt(v, password, iv) }
+	}
+
+	return decrypted_hash
+end
+
+def read_password_from_keyboard(prompt="Password:")
+	system "stty -echo"
+	print prompt
+	pw = $stdin.gets
+	system "stty echo"
+	puts ""
+	return pw.strip
+end
+
+
+def create_password(length=18, special_chars=true)
+	possible = (('A'..'Z').to_a + ('a' .. 'z').to_a + (0..9).to_a)
+	possible = possible | "!$%&?+*#-_.".split("") if special_chars
+	api_string = (0...length).map { |n| possible.sample }.join
+end
+
+def to_clipboard(string)
+	system "echo \"#{string}\" | pbcopy"
+end
+
+def read_from_clipboard
+	system("echo `pbpaste` > tmp")
+	contents = File.read("tmp").strip
+	system("rm tmp")
+	return contents
+end
+
+def server(data_hash, password)
+	encrypted_data = encrypt_data(data_hash, password)
+	s = TCPServer.new('localhost', PORT)
+	puts "Listening... (Press CTRL+C to stop)"
+	while (session = s.accept) do
+		session.puts encrypted_data
+		session.close
+	end
+	puts "Done."
+end
+
+def synchronize(hostname, my_data_hash, password)
+	socket = TCPSocket.open(hostname, PORT)
+	encrypted_data  = socket.gets.strip
+	socket.close
+
+	their_data_hash = read_string(encrypted_data, password)
+
+	their_data_hash.each { |k, v|
+		unless k == "iv" then
+			if (my_data_hash.keys.include?(k) && (my_data_hash[k]!=v)) then
+				puts "Already got different password for #{k}"
+				print "Overwrite? (Y/N)"
+				decision = STDIN.getch.upcase
+				if (decision=="Y") then
+					puts "OK. overwriting"
+					my_data_hash[k] = v
+				else
+					puts "OK. keeping my password"
+				end
+			else
+				puts "Importing #{k}"
+				my_data_hash[k] = v
+			end
+		end
+	}
+
+	return my_data_hash
+end
+
+
+# ---- END FUNCTIONS ----
+
+
+options = {}
+parser = OptionParser.new do |opts|
+  opts.banner = "Usage: pwmanager [options]"
+
+  opts.on("-c", "--create key", "Create a new password for the given key") do |key|
+	  options[:operation] = :create
+	  options[:key] = key
+  end
+  opts.on("-s", "--set key", "Add a new password or overwrite an old one") do |key|
+	  options[:operation] = :set
+	  options[:key] = key
+  end
+  opts.on("-r", "--read [key]", "Add a new password or overwrite an old one") do |key|
+	  options[:operation] = :read
+	  options[:key] = key
+  end
+  opts.on('-l', '--list', "List all available sites/keys") do 
+	  options[:operation] = :list
+  end
+  opts.on("-g", "--generate", "Generate a password") do 
+	  options[:operation] = :generate
+  end
+  opts.on("--server", "Start a server so others can synchronize") do 
+	  options[:operation] = :server
+  end
+  opts.on("--synchronize server", "Download entries from other instance") do |hostname|
+	  options[:operation] = :synchronize
+	  options[:hostname] = hostname
+  end
+
+  opts.on("--no-special-chars", "Avoid special characters (that is non numbers and letters) in generated password") do
+	  options[:no_special_chars] = true
+  end
+  opts.on("--length password_length", "Password length for password creation") do |length|
+	  options[:length] = length.to_i
+  end
+  opts.on("-f", "--file [file]", "Password file to use rather than $PASSWORDFILE") do |f|
+	  options[:password_file] = f
+  end
+  opts.on("--password password", "Masterpassword (instead of reading it from keyboard)") do |password|
+	  options[:master_password] = password
+  end
+  opts.on("--clipboard", "Read password from clipboard or write it to the clipboard") do |clipboard|
+	  options[:clipboard] = true
+  end
+  opts.on("--debug [key]", "Print debugging data that can be used for evaluation using other tools") do |key|
+	  options[:operation] = :debug
+	  options[:key] = key
+  end
+end
+
+parser.parse!
+
+if (options[:operation].nil?) then
+	puts parser.help
+	exit
+end
+
+
+
+
+
+password_file = options[:password_file] || ENV['PASSWORDFILE']
+
+if (options[:operation]==:generate) then
+	pw = create_password(options[:length] || 18, !options[:no_special_chars])
+	if (options[:clipboard]) then
+		to_clipboard(pw)
+	else
+		puts pw
+	end
+	exit
+end
+
+
+if password_file.nil? then
+	puts "You need to either provide a password-file via the --file (-f) option or set the $PASSWORDFILE environment-variable"
+	exit
+end
+
+data = {}
+master_password = options[:master_password] || read_password_from_keyboard("Master password:")
+
+if (options[:operation]==:debug) then
+	key = password_to_key(master_password)
+	puts "Key (Base64): #{Base64.encode64(key)}"
+	puts "Key (Hex): #{key.to_hex}"
+	s_json = File.read(password_file)
+	encrypted_hash = JSON.parse(s_json)
+	puts "IV (Base64) : #{encrypted_hash['iv']}"
+	puts "IV (Hex) : #{Base64.decode64(encrypted_hash['iv']).to_hex}"
+	unless options[:key].nil? then
+		value = encrypted_hash[options[:key]]
+		puts "Encrypted (Base64): #{value}"
+		puts "Encrypted (Hex): #{Base64.decode64(value).to_hex}"
+	end
+	exit 
+end
+
+
+if File.exist?(password_file) then
+	begin
+		data = read_file(password_file, master_password)
+	rescue
+		puts "Invalid password"
+		exit 1
+	end
+end
+
+case options[:operation]
+when :create
+	pw = create_password(options[:length] || 18, !options[:no_special_chars])
+	data[options[:key]] = pw
+	puts "Successfully created password for #{options[:key]}"
+	if (options[:clipboard]) then
+		to_clipboard(pw)
+		puts "You'll find the password in your clipboard"
+	else
+		puts pw
+	end
+when :set
+	if (options[:clipboard]) then
+		pw = read_from_clipboard
+		data[options[:key]] = pw
+	else
+		pw1 = read_password_from_keyboard
+		pw2 = read_password_from_keyboard("Password (repeat):")
+		unless pw1 == pw2 then
+			puts "The passwords are not the same"
+			exit
+		end
+		data[options[:key]] = pw1
+	end
+when :read
+	if (options[:clipboard]) then
+		to_clipboard(data[options[:key]])
+	else
+		puts "Your password for #{options[:key]} is #{data[options[:key]]}"
+	end
+when :list
+	puts "\nThese sites/keys are available:"
+	puts data.select { |k,v| k != "iv" }.keys.join("\n")
+when :server
+	server(data, master_password)
+when :synchronize
+	synchronize(options[:hostname], data, master_password)
+end
+
+write_file(data, master_password, password_file)
