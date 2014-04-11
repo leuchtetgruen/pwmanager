@@ -187,6 +187,10 @@ parser = OptionParser.new do |opts|
 	  options[:operation] = :read
 	  options[:key] = key
   end
+  opts.on("-d", "--delete key", "Remove a key from the password database") do |key|
+	  options[:operation] = :delete
+	  options[:key] = key
+  end
   opts.on('-l', '--list', "List all available sites/keys") do 
 	  options[:operation] = :list
   end
@@ -310,6 +314,8 @@ when :read
 	else
 		puts "Your password for #{options[:key]} is #{data[options[:key]]}"
 	end
+when :delete
+	data.delete(options[:key])
 when :list
 	puts "\nThese sites/keys are available:"
 	puts data.select { |k,v| k != "iv" }.keys.join("\n")
