@@ -97,6 +97,14 @@ end
 def read_string(string, password)
 	encrypted_hash = JSON.parse(string)
 
+	file_version = encrypted_hash["version"]
+	if  (file_version >  VERSION) then
+		puts "File-Format-Version (#{file_version}) is newer than this version #{VERSION}. Please update to read this file"
+		exit
+	else
+		puts "Warning: Using an older version of this software in the file (#{file_version}). You currently use version #{VERSION}"
+	end
+
 	cipher = create_cipher
 	iv = Base64.decode64(encrypted_hash['iv'])
 
