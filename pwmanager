@@ -148,7 +148,7 @@ end
 
 def server(data_hash, password)
 	encrypted_data = encrypt_data(data_hash, password)
-	s = TCPServer.new('localhost', PORT)
+	s = TCPServer.new(PORT)
 	puts "Listening... (Press CTRL+C to stop)"
 	while (session = s.accept) do
 		session.puts encrypted_data
