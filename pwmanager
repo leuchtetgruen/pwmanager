@@ -101,7 +101,7 @@ def read_string(string, password)
 	if  (file_version >  VERSION) then
 		puts "File-Format-Version (#{file_version}) is newer than this version #{VERSION}. Please update to read this file"
 		exit
-	else
+	elsif (file_version < VERSION) then
 		puts "Warning: Using an older version of this software in the file (#{file_version}). You currently use version #{VERSION}"
 	end
 
