@@ -151,6 +151,7 @@ def server(data_hash, password)
 	s = TCPServer.new(PORT)
 	puts "Listening... (Press CTRL+C to stop)"
 	while (session = s.accept) do
+		puts "Sending data to #{session.addr.last} ..."
 		session.puts encrypted_data
 		session.close
 	end
