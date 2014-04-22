@@ -150,6 +150,13 @@ def server(data_hash, password)
 	encrypted_data = encrypt_data(data_hash, password)
 	s = TCPServer.new(PORT)
 	puts "Listening... (Press CTRL+C to stop)"
+
+	addresses = Socket.ip_address_list.select { |address|
+		!([:ipv4_loopback?, :ipv6_linklocal?, :ipv6_loopback?].any? { |sym| address.__send__ sym })
+	}.map { |address| address.ip_address }.join(", ")
+	puts "You can connect to any of these IP addresses on port #{PORT}: #{addresses}"
+
+
 	while (session = s.accept) do
 		puts "Sending data to #{session.addr.last} ..."
 		session.puts encrypted_data
