@@ -135,12 +135,23 @@ def create_password(length=18, special_chars=true)
 	api_string = (0...length).map { |n| possible.sample }.join
 end
 
-def to_clipboard(string)
-	system "echo \"#{string}\" | pbcopy"
+def to_clipboard(string, type)
+	case type
+	when :osx then
+		system "echo \"#{string}\" | pbcopy"
+	when :x11 then
+		system "echo \"#{string}\" | xsel -i -b"
+		system "echo \"#{string}\" | xsel -i -p"
+	end
 end
 
-def read_from_clipboard
-	system("echo `pbpaste` > tmp")
+def read_from_clipboard(type)
+	case type
+	when :osx then
+		system("echo `pbpaste` > tmp")
+	when :x11 then
+		system("xsel -o > tmp")
+	end
 	contents = File.read("tmp").strip
 	system("rm tmp")
 	return contents
@@ -246,8 +257,16 @@ parser = OptionParser.new do |opts|
   opts.on("--password password", "Masterpassword (instead of reading it from keyboard)") do |password|
 	  options[:master_password] = password
   end
-  opts.on("--clipboard", "Read password from clipboard or write it to the clipboard") do |clipboard|
+  opts.on("--clipboard [type]", "Read password from clipboard or write it to the clipboard") do |type|
 	  options[:clipboard] = true
+
+	  clipboard_type = if type.nil? then
+				   #TODO detect OS and desktop environment
+				   clipboard_type = :osx
+			   else
+				   type.to_sym
+			   end
+	  options[:clipboard_type] = clipboard_type
   end
 end
 
@@ -264,7 +283,7 @@ password_file = options[:password_file] || ENV['PASSWORDFILE']
 if (options[:operation]==:generate) then
 	pw = create_password(options[:length] || 18, !options[:no_special_chars])
 	if (options[:clipboard]) then
-		to_clipboard(pw)
+		to_clipboard(pw, options[:clipboard_type])
 	else
 		puts pw
 	end
@@ -305,14 +324,14 @@ when :create
 	data[options[:key]] = pw
 	puts "Successfully created password for #{options[:key]}"
 	if (options[:clipboard]) then
-		to_clipboard(pw)
+		to_clipboard(pw, options[:clipboard_type])
 		puts "You'll find the password in your clipboard"
 	else
 		puts pw
 	end
 when :set
 	if (options[:clipboard]) then
-		pw = read_from_clipboard
+		pw = read_from_clipboard(options[:clipboard_type])
 		data[options[:key]] = pw
 	else
 		pw1 = read_password_from_keyboard
@@ -336,7 +355,7 @@ when :set
 	end
 when :read
 	if (options[:clipboard]) then
-		to_clipboard(data[options[:key]])
+		to_clipboard(data[options[:key]], options[:clipboard_type])
 	else
 		puts "Your password for #{options[:key]} is #{data[options[:key]]}"
 	end
