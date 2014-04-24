@@ -261,8 +261,15 @@ parser = OptionParser.new do |opts|
 	  options[:clipboard] = true
 
 	  clipboard_type = if type.nil? then
-				   #TODO detect OS and desktop environment
-				   clipboard_type = :osx
+				   clipboard_type = if RUBY_PLATFORM =~ /darwin/i then
+							    :osx
+						    elsif RUBY_PLATFORM =~ /linux/i then
+							    :x11
+						    else
+							    # OSX is the default if no other os could be detected
+							    :osx
+						    end
+				   puts "Detected '#{clipboard_type}' as your OS/Desktop Environment/Window Server"
 			   else
 				   type.to_sym
 			   end
