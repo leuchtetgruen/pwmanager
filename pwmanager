@@ -313,6 +313,17 @@ when :set
 			puts "The passwords are not the same"
 			exit
 		end
+		if data.values.include?(pw1) then
+			puts "This password is already set for another key. An attacker with access to the password file can see this. Do you really want to set this password? (Y/N)"
+			decision = STDIN.getch.upcase
+			if (decision != "Y") then
+				puts "Ok. Not setting this password."
+				exit
+			else
+				puts "Ok. Setting the password anyway. Dont say I didn't warn you."
+			end
+
+		end
 		data[options[:key]] = pw1
 	end
 when :read
