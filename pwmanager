@@ -145,11 +145,11 @@ def read_string(string, password)
 	return decrypted_hash
 end
 
-def read_password_from_keyboard(prompt="Password:")
-	system "stty -echo"
+def read_password_from_keyboard(prompt="Password:", silent=true)
+	system "stty -echo" if silent
 	print prompt
 	pw = $stdin.gets
-	system "stty echo"
+	system "stty echo" if silent
 	puts ""
 	return pw.strip
 end
@@ -233,7 +233,7 @@ end
 # ---- END FUNCTIONS ----
 
 
-options = {}
+options = {silent: true}
 parser = OptionParser.new do |opts|
   opts.banner = "Usage: pwmanager [options]"
 
@@ -301,6 +301,9 @@ parser = OptionParser.new do |opts|
 			   end
 	  options[:clipboard_type] = clipboard_type
   end
+  opts.on("--aloud", "Echo keyboard input (thus showing passwords your type)") do |aloud|
+	  options[:silent] = false
+  end
 end
 
 parser.parse!
@@ -338,7 +341,7 @@ if password_file.nil? then
 end
 
 data = {}
-master_password = options[:master_password] || read_password_from_keyboard("Master password:")
+master_password = options[:master_password] || read_password_from_keyboard("Master password:", options[:silent])
 
 
 
@@ -367,8 +370,8 @@ when :set
 		pw = read_from_clipboard(options[:clipboard_type])
 		data[options[:key]] = pw
 	else
-		pw1 = read_password_from_keyboard
-		pw2 = read_password_from_keyboard("Password (repeat):")
+		pw1 = read_password_from_keyboard("Password:", options[:silent]);
+		pw2 = read_password_from_keyboard("Password (repeat):", options[:silent])
 		unless pw1 == pw2 then
 			puts "The passwords are not the same"
 			exit
@@ -394,11 +397,11 @@ when :delete
 when :server
 	server(data, master_password)
 when :synchronize
-	their_password = read_password_from_keyboard("Remote master password:")
+	their_password = read_password_from_keyboard("Remote master password:", options[:silent])
 	synchronize(options[:hostname], data, their_password)
 when :changepassword
-	master_password1 = read_password_from_keyboard("New master password:")
-	master_password2 = read_password_from_keyboard("New master password (repeat):")
+	master_password1 = read_password_from_keyboard("New master password:", options[:silent])
+	master_password2 = read_password_from_keyboard("New master password (repeat):", options[:silent])
 	if (master_password1 != master_password2) then
 		puts "The passwords are not the same"
 		exit
