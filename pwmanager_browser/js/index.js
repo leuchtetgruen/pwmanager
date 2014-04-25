@@ -68,7 +68,6 @@ function decrypt_hash(data, password) {
 
 	_.each(data, function(value, key) {
 		data[key] = decrypt(value, shaKey, iv, salt_length);
-		console.log(key + "?=>" + data[key]);
 	});
 
 	all_passwords = data;
@@ -76,17 +75,27 @@ function decrypt_hash(data, password) {
 }
 
 function decrypt(base64EncodedEncryptedString, key, iv, salt_length) {
-	encrypted = CryptoJS.enc.Base64.parse(base64EncodedEncryptedString);
-	decrypted = CryptoJS.AES.decrypt(
-			{
-				ciphertext: encrypted,
-				  salt: ""
-			},
-			key,
-			{ iv: iv});
+	try {
+		encrypted = CryptoJS.enc.Base64.parse(base64EncodedEncryptedString.replace("\n", ""));
+		decrypted = CryptoJS.AES.decrypt(
+				{
+					ciphertext: encrypted
+				},
+				key,
+				{ 
+					iv: iv,
+					mode: CryptoJS.mode.CBC,
+					padding: CryptoJS.pad.Pkcs7,
+			  		format: CryptoJS.format.OpenSSL
+				});
 
-	console.log(decrypted.toString(CryptoJS.enc.Latin1));
-	decryptedString = decrypted.toString(CryptoJS.enc.Utf8);
+		decryptedString = decrypted.toString(CryptoJS.enc.Utf8);
+	}
+	catch (e) {
+		console.err(e);
+	}
+
+
 	if (salt_length > 0) {
 		decryptedString = decryptedString.substring(0, decryptedString.length - salt_length);
 	}
