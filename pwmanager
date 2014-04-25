@@ -15,6 +15,8 @@ KEY_GENERATION_STR = "SHA256"
 DESIRED_SALT_LENGTH = 10
 VERSION = 2
 
+@debug = false
+
 FILTER_KEYS = ["iv", "description", "cipher", "keygen", "version", "salt_length"]
 
 # ---- FUNCTIONS ----
@@ -79,6 +81,10 @@ def decrypt_v2(data, password, iv, salt_length)
 
 	dec = cipher.update(Base64.decode64(data))
 	dec << cipher.final
+
+	if @debug then
+		puts "DEBUG: decrypted full text #{dec}"
+	end
 
 	return dec[0...-salt_length]
 end
@@ -303,6 +309,9 @@ parser = OptionParser.new do |opts|
   end
   opts.on("--aloud", "Echo keyboard input (thus showing passwords your type)") do |aloud|
 	  options[:silent] = false
+  end
+  opts.on("--debug", "Turn on debug output") do |debug|
+	  @debug = true
   end
 end
 

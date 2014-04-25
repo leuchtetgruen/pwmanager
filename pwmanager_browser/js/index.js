@@ -67,8 +67,8 @@ function decrypt_hash(data, password) {
 
 
 	_.each(data, function(value, key) {
-		console.log(key + "=>" + value);
 		data[key] = decrypt(value, shaKey, iv, salt_length);
+		console.log(key + "?=>" + data[key]);
 	});
 
 	all_passwords = data;
@@ -85,6 +85,7 @@ function decrypt(base64EncodedEncryptedString, key, iv, salt_length) {
 			key,
 			{ iv: iv});
 
+	console.log(decrypted.toString(CryptoJS.enc.Latin1));
 	decryptedString = decrypted.toString(CryptoJS.enc.Utf8);
 	if (salt_length > 0) {
 		decryptedString = decryptedString.substring(0, decryptedString.length - salt_length);
@@ -98,14 +99,13 @@ function displayPasswords(passwords) {
 	var table = $('#passwords_table');
 
 	_.each(passwords, function(value, key) {
-		console.log(value);
-		console.log(table);
 		var tr = $('<tr/>').appendTo(table);
 
 		var tdName = $('<td/>').text(key).appendTo(tr);
 
 		var tdPassword = $('<td/>').appendTo(tr);
-		var aPassword = $('<a/>').text(_.map(value.split(""), function(e) { return "*" }).join("")).attr("href", "#").appendTo(tdPassword);
+		var maskedText = _.map(value.split(""), function(e) { return "*" }).join("");
+		var aPassword = $('<a/>').text(maskedText).attr("href", "#").appendTo(tdPassword);
 		aPassword.attr("masked", "yes");
 		aPassword.click(function() {
 			if (aPassword.attr("masked")=="yes") {
