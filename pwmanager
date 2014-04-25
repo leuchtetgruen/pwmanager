@@ -9,12 +9,13 @@ require 'socket'
 require 'io/console'
 
 PORT = 2000
-DESCRIPTION = "This JSON file contains AES-256-CBC-encrypted passwords. The IV is contained base64-encoded in this file. The key is the SHA256-Digest of your master-password."
+DESCRIPTION = "This JSON file contains Base64-Representations of AES-256-CBC-encrypted passwords. There is a salt appended to the passwords before encrypting them. The length of the salt is included in the SALT_LENGTH field. The IV is contained base64-encoded in this file. The key is the SHA256-Digest of your master-password."
 CIPHER_STR = "AES-256-CBC"
 KEY_GENERATION_STR = "SHA256"
-VERSION = 1
+DESIRED_SALT_LENGTH = 10
+VERSION = 2
 
-FILTER_KEYS = ["iv", "description", "cipher", "keygen", "version"]
+FILTER_KEYS = ["iv", "description", "cipher", "keygen", "version", "salt_length"]
 
 # ---- FUNCTIONS ----
 class Hash
@@ -44,19 +45,21 @@ def create_cipher
 end
 
 def encrypt(string, password, iv)
+	salt = create_random_string(DESIRED_SALT_LENGTH, true)
+	string_plus_salt = string + salt
 
 	cipher = create_cipher
 	cipher.encrypt
 	cipher.iv = iv
 	cipher.key = password_to_key(password)
-	enc = cipher.update(string)
+	enc = cipher.update(string_plus_salt)
 	enc << cipher.final
 
 	return Base64.encode64(enc)
 end
 
 
-def decrypt(data, password, iv)
+def decrypt_v1(data, password, iv)
 	cipher = create_cipher
 	cipher.decrypt
 	cipher.iv = iv
@@ -66,6 +69,27 @@ def decrypt(data, password, iv)
 	dec << cipher.final
 
 	return dec
+end
+
+def decrypt_v2(data, password, iv, salt_length)
+	cipher = create_cipher
+	cipher.decrypt
+	cipher.iv = iv
+	cipher.key = password_to_key(password)
+
+	dec = cipher.update(Base64.decode64(data))
+	dec << cipher.final
+
+	return dec[0...-salt_length]
+end
+
+def decrypt(data, password, iv, version, decrypt_options)
+	case version
+	when 1
+		decrypt_v1(data, password, iv)
+	when 2
+		decrypt_v2(data, password, iv, decrypt_options[:salt_length])
+	end
 end
 
 def write_file(data_hash, password, filename)
@@ -84,6 +108,7 @@ def encrypt_data(data_hash, password)
 	encrypted_hash["cipher"] = CIPHER_STR
 	encrypted_hash["keygen"] = KEY_GENERATION_STR
 	encrypted_hash["version"] = VERSION
+	encrypted_hash["salt_length"] = DESIRED_SALT_LENGTH
 
 
 	encrypted_hash.to_json
@@ -107,13 +132,14 @@ def read_string(string, password)
 
 	cipher = create_cipher
 	iv = Base64.decode64(encrypted_hash['iv'])
+	salt_length = encrypted_hash['salt_length'];
 
 	encrypted_hash = encrypted_hash.reject { |k,v | 
 		FILTER_KEYS.include?(k)
 	}
 
 	decrypted_hash = encrypted_hash.hmap { |k,v|
-		{ k => decrypt(v, password, iv) }
+		{ k => decrypt(v, password, iv, file_version, {salt_length: salt_length}) }
 	}
 
 	return decrypted_hash
@@ -129,7 +155,7 @@ def read_password_from_keyboard(prompt="Password:")
 end
 
 
-def create_password(length=18, special_chars=true)
+def create_random_string(length=18, special_chars=true)
 	possible = (('A'..'Z').to_a + ('a' .. 'z').to_a + (0..9).to_a)
 	possible = possible | "!$%&?+*#-_.".split("") if special_chars
 	api_string = (0...length).map { |n| possible.sample }.join
@@ -288,7 +314,7 @@ end
 password_file = options[:password_file] || ENV['PASSWORDFILE']
 
 if (options[:operation]==:generate) then
-	pw = create_password(options[:length] || 18, !options[:no_special_chars])
+	pw = create_random_string(options[:length] || 18, !options[:no_special_chars])
 	if (options[:clipboard]) then
 		to_clipboard(pw, options[:clipboard_type])
 	else
@@ -327,7 +353,7 @@ end
 
 case options[:operation]
 when :create
-	pw = create_password(options[:length] || 18, !options[:no_special_chars])
+	pw = create_random_string(options[:length] || 18, !options[:no_special_chars])
 	data[options[:key]] = pw
 	puts "Successfully created password for #{options[:key]}"
 	if (options[:clipboard]) then
@@ -346,17 +372,6 @@ when :set
 		unless pw1 == pw2 then
 			puts "The passwords are not the same"
 			exit
-		end
-		if data.values.include?(pw1) then
-			puts "This password is already set for another key. An attacker with access to the password file can see this. Do you really want to set this password? (Y/N)"
-			decision = STDIN.getch.upcase
-			if (decision != "Y") then
-				puts "Ok. Not setting this password."
-				exit
-			else
-				puts "Ok. Setting the password anyway. Dont say I didn't warn you."
-			end
-
 		end
 		data[options[:key]] = pw1
 	end
