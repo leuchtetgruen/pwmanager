@@ -1,0 +1,49 @@
+html, body {
+	margin: 0;
+	padding: 0;
+	font-family: Verdana,sans-serif;
+	width: 100%;
+}
+header {
+	background-color: #D74B4B;
+	height: 50px;
+	font-size: 150%;
+	color: #FFF;
+	text-align: center;
+	display: table;
+	width: 100%;
+}
+
+header > div.cannot-center-in-a-reasonable-way {
+	display: table-cell;
+	vertical-align: middle;
+}
+
+div#step1 {
+	background-color: #D74B4B;
+	color: #FFF;
+	padding: 10px;
+}
+
+div#step2 {
+	padding: 10px;
+}
+
+
+div#step2 h1 {
+	color: #354B5E;
+}
+
+div#step2 table {
+	width: 50%;
+}
+
+div#step2 table th {
+	text-align: left;
+}
+
+div#step2 a {
+	text-decoration: none;
+	font-weight: bold;
+	color: #D74B4B;
+}

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script type="text/javascript" src="rollups/aes.js"></script>
+    <script type="text/javascript" src="rollups/sha256.js"></script>
+    <script type="text/javascript" src="components/enc-base64-min.js"></script>
+    <script type="text/javascript" src="components/format-hex-min.js"></script>
+
+    <script type="text/javascript" src="js/underscore-min.js"></script>
+    <script type="text/javascript" src="js/jquery-2.1.0.min.js"></script>
+
+    <script type="text/javascript" src="js/index.js"></script>
+
+    <link href="css/style.css" rel="stylesheet">
+
+    <title>PwManager (Web)</title>
+</head>
+<body>
+	<header>
+		<div class="cannot-center-in-a-reasonable-way">PwManager</div>
+	</header>
+	<div id="step1">
+	
+		<h1>Step 1: Load the password file</h1>
+		File:
+		<input type="file" name="password_file" id="password_file" />
+
+		Password:
+		<input type="password" name="password" value="" id="password" />
+
+		<button id="loadButton">Load</button>
+	</div>
+	<div id="step2">
+	        <h1>Step 2: Here are your passwords</h1>
+
+		Filter / Search: <input type="search" id="search" name="search" />
+		<hr />
+		<table cellspacing="0" id="passwords_table">
+		        <tr>
+				<th>Name</th>
+				<th>Password</th>
+				<th></th>
+			</tr>
+		</table>
+	</div>
+	
+        
+</body>
+</html>
