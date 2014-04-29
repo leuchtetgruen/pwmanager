@@ -293,18 +293,18 @@ parser = OptionParser.new do |opts|
 	  options[:clipboard] = true
 
 	  clipboard_type = if type.nil? then
-				   clipboard_type = if RUBY_PLATFORM =~ /darwin/i then
-							    :osx
-						    elsif RUBY_PLATFORM =~ /linux/i then
-							    :x11
-						    else
-							    # OSX is the default if no other os could be detected
-							    :osx
-						    end
-				   puts "Detected '#{clipboard_type}' as your OS/Desktop Environment/Window Server"
+				   if RUBY_PLATFORM =~ /darwin/i then
+					   :osx
+				   elsif RUBY_PLATFORM =~ /linux/i then
+					   :x11
+				   else
+					   # OSX is the default if no other os could be detected
+					   :osx
+				   end
 			   else
 				   type.to_sym
 			   end
+	  puts "Detected '#{clipboard_type}' as your OS/Desktop Environment/Window Server"
 	  options[:clipboard_type] = clipboard_type
   end
   opts.on("--aloud", "Echo keyboard input (thus showing passwords your type)") do |aloud|
