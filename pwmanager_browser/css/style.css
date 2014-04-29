@@ -3,47 +3,73 @@ html, body {
 	padding: 0;
 	font-family: Verdana,sans-serif;
 	width: 100%;
+	height: 100%;
+	/*background-color: #E8F9FF;*/
+
+	background-image: -o-linear-gradient(-90deg, #F4F9FB 0%, #E8F9FF 34%, #E8F9FF 100%);
+	background-image: -moz-linear-gradient(-90deg, #F4F9FB 0%, #E8F9FF 34%, #E8F9FF 100%);
+	background-image: -webkit-linear-gradient(-90deg, #F4F9FB 0%, #E8F9FF 34%, #E8F9FF 100%);
+	background-image: -ms-linear-gradient(-90deg, #F4F9FB 0%, #E8F9FF 34%, #E8F9FF 100%);
+	background-image: linear-gradient(-180deg, #F4F9FB 0%, #E8F9FF 34%, #E8F9FF 100%);
 }
-header {
-	background-color: #D74B4B;
-	height: 50px;
-	font-size: 150%;
+
+.hidden {
+	display: none;
+}
+
+#dropTarget {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+
+	margin-top: -250px;
+	margin-left: -250px;
+
+	width: 500px;
+	height: 500px;
+
+	border-radius: 20px;
+	background-color: #73BF3A;
+	border: rgba(255, 255, 255, 0.5) 10px dashed;
+
+	color: rgba(255, 255, 255, 0.6);
+
+	text-align: center;
+}
+
+
+#dropTarget.hover {
+	background-color: #B2E641;
+}
+
+
+#uploadState {
+	margin-top: 150px;
+	font-size: 200px;
+}
+
+#dropTarget input[type=password] {
+	border: none;
+	border-radius: 10px;
+	background-color: rgba(255, 255, 255, 0.15);
+	/*margin: 10px;*/
+	padding: 4px;
+	width: 80%;
+	font-size: 20px;
 	color: #FFF;
 	text-align: center;
-	display: table;
-	width: 100%;
-}
-
-header > div.cannot-center-in-a-reasonable-way {
-	display: table-cell;
-	vertical-align: middle;
-}
-
-div#step1 {
-	background-color: #D74B4B;
-	color: #FFF;
-	padding: 10px;
-}
-
-div#step2 {
-	padding: 10px;
 }
 
 
-div#step2 h1 {
-	color: #354B5E;
+#dropTarget input[type=password]::-webkit-input-placeholder { /* WebKit browsers */
+    color:    #fff;
 }
-
-div#step2 table {
-	width: 50%;
+#dropTarget input[type=password]:-moz-placeholder { /* Mozilla Firefox 4 to 18 */
+    color:    #fff;
 }
-
-div#step2 table th {
-	text-align: left;
+#dropTarget input[type=password]::-moz-placeholder { /* Mozilla Firefox 19+ */
+    color:    #fff;
 }
-
-div#step2 a {
-	text-decoration: none;
-	font-weight: bold;
-	color: #D74B4B;
+#dropTarget input[type=password]:-ms-input-placeholder { /* Internet Explorer 10+ */
+    color:    #fff;
 }

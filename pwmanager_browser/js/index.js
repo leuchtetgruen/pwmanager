@@ -1,47 +1,53 @@
 var all_passwords   = {};
 var FILTER_KEYS = ["iv", "description", "cipher", "keygen", "version", "salt_length"];
 var MY_VERSION  = 2;
+var passwordFile = null;
 
 
 
 $(document).ready(function() {
 	fileReader = new FileReader();
 
+	var dropTarget = document.getElementById("dropTarget");
+	dropTarget.ondragover = function () { this.className = 'hover'; return false; };
+	dropTarget.ondragend = function () { this.className = ''; return false; };
+	dropTarget.ondragleave = function () { this.className = ''; return false; };
+	dropTarget.ondrop = function(e) {
+		this.className = '';
+		$('#uploadState').removeClass("fa-download").addClass("fa-keyboard-o");
+		e.preventDefault();
 
-	$('#loadButton').click(function() {
-		file = $('#password_file')[0].files[0];
-		loadFile(file);
-	});
+		passwordFile = e.dataTransfer.files[0];
+		$('#step1Text').text("Step 2");
+		$('#password').attr("placeholder", "Now enter your password").focus();
+
+		return false;
+	};
 
 
-	$('#search').keyup(function() {
-		search = $('#search').val().toLowerCase();
-
-		if (search.length < 1) {
-			displayPasswords(all_passwords);
+	$('#password').keypress(function(e) {
+		if (e.which == 13) {
+			loadFile(passwordFile, $('#password').val());
+			$('#step1').addClass("hidden");
+			$('#step2').removeClass("hidden");
 		}
-
-		pair_passwords = _.pairs(all_passwords);
-		filtered_pairs = _.filter(pair_passwords, function(key_value_array) {
-			return (key_value_array[0].toLowerCase().indexOf(search) != -1);
-		});
-		matching_passwords = _.object(filtered_pairs);
-		displayPasswords(matching_passwords);
 	});
+
+
 
 });
 
 
-function loadFile(file) {
+function loadFile(file, password) {
 	fileReader.onload = function(e) {
 		var text = fileReader.result;
-		loadJSON(text);
+		loadJSON(text, password);
 	}
 	fileReader.readAsText(file, "utf-8");
 }
 
 
-function loadJSON(text) {
+function loadJSON(text, password) {
 	obj = JSON.parse(text);
 	ver = obj['version'];
 	if (ver > MY_VERSION) {
@@ -51,7 +57,7 @@ function loadJSON(text) {
 		console.log("The file you are using is old. it uses version " + ver + ". this is version " + MY_VERSION);
 	}
 
-	decrypt_hash(obj, $('#password').val());
+	decrypt_hash(obj, password);
 
 }
 
