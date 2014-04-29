@@ -73,3 +73,47 @@ html, body {
 #dropTarget input[type=password]:-ms-input-placeholder { /* Internet Explorer 10+ */
     color:    #fff;
 }
+
+
+#step2 h1 {
+	margin: 0px;
+	
+	width: 100%;
+	height: 60px;
+	font-size: 40px;
+
+	padding: 10px;
+	text-align: center;
+
+	background-color: #73BF3A;
+	color: rgba(255, 255, 255, 0.6);
+}
+
+
+#step2 #passwords_table {
+	width: 100%;
+	padding: 20px;
+	color: #425669;
+}
+
+#step2 #passwords_table th {
+	text-align: left;
+}
+
+#step2 #passwords_table a {
+	text-decoration: none;
+}
+
+
+#step2 #passwords_table td {
+	padding-top: 5px;
+	padding-bottom: 5px;
+}
+
+#step2 #passwords_table th {
+	border-bottom: 1px solid #000;
+}
+
+#step2 #passwords_table tr:nth-child(2n) td {
+	background-color: rgba(255, 255, 255, 0.75);
+}

@@ -135,8 +135,8 @@ function displayPasswords(passwords) {
 
 
 		var tdCopy = $('<td/>').appendTo(tr);
-		var aCopy = $('<a/>').attr("href", "#").text("Copy").appendTo(tdCopy);
-		aCopy.click(function() {
+		var iCopy = $('<i/>').addClass("fa").addClass("fa-copy").appendTo(tdCopy);
+		iCopy.click(function() {
 			window.prompt("Copy to clipboard: (Cmd|Ctrl)+C, Enter", value);
 		});
 	});
