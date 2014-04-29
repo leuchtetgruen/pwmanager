@@ -25,9 +25,22 @@ a look at the source yourself and see if it meets your security needs. (Don't wo
 Installation
 ------------
 
+OS X / Linux
+------------
+
 You'll need a unix (preferrably an OS X), a current ruby (I use 2.0.0) and a terminal
 
 * download the tool
 * chmod +x pwmanager
 * ./pwmanager
 * (You might want to move it to /usr/local/bin or some place else)
+
+
+Windows
+-------
+
+* Download ruby using [RubyInstaller for Windows](http://rubyinstaller.org/) and install it. Make sure
+  to put it in your path and enable .rb detection (using the corresponding checkmarks in the installer)
+* Download the tool
+* Open your Command Line Tool
+* Just run it (either by typing `ruby pwmanager` or by renaming it to pwmanager.rb and running it using `pwmanger.rb`)
