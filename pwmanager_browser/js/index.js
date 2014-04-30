@@ -1,6 +1,7 @@
 var all_passwords   = {};
 var FILTER_KEYS = ["iv", "description", "cipher", "keygen", "version", "salt_length"];
 var MY_VERSION  = 2;
+var DESIRED_SALT_LENGTH = 10;
 var passwordFile = null;
 
 
@@ -140,6 +141,45 @@ function decrypt(base64EncodedEncryptedString, key, iv, salt_length) {
 	return decryptedString;
 }
 
+
+function randomString(length, specialChars) {
+	var passwordChars = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
+		'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
+		'0','1','2','3','4','5','6','7','8','9',
+		
+	];
+
+	var specialChars = ['!', '$', '%', '&', '?', '+', '*', '#', '-', '_', '.'];
+
+	var myRange = specialChars ? _.union(passwordChars, specialChars) : passwordChars;
+	return _.map(_.range(length), function(value) {
+		var index = Math.floor(Math.random() * myRange.length);
+		return myRange[index];
+
+	}).join("");
+
+}
+
+function passwordToKey(password) {
+	return CryptoJS.SHA256(password);
+}
+
+function encrypt(originalText, password, iv) {
+	var saltedString = originalText + randomString(DESIRED_SALT_LENGTH, true);
+
+
+	var key =  passwordToKey(password);
+
+	try {
+		var encrypted = CryptoJS.AES.encrypt(saltedString, key, {iv: iv});
+		return encrypted.ciphertext.toString(CryptoJS.enc.Base64);
+	} catch (e) {
+		console.log(e);
+	}
+
+
+}
+
 function showError(text) {
 	console.log("ShowError ->" + text);
 	$('#dropTarget').addClass('error');
@@ -181,4 +221,14 @@ function displayPasswords(passwords) {
 			window.prompt("Copy to clipboard: (Cmd|Ctrl)+C, Enter", value);
 		});
 	});
+}
+
+
+function runningOnNode() {
+	try {
+		return (require!=false);
+	}
+	catch (e)  {
+		return false;
+	}
 }
