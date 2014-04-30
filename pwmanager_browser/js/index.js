@@ -31,6 +31,21 @@ $(document).ready(function() {
 		}
 	});
 
+	$('#search').keyup(function(e) {
+		var filter = $('#search').val();
+		if (filter.length == 0) {
+			displayPasswords(all_passwords);
+			return;
+		}
+
+		pair_passwords = _.pairs(all_passwords);
+		filtered_pairs = _.filter(pair_passwords, function(key_value_array) {
+			return (key_value_array[0].toLowerCase().indexOf(filter) != -1);
+		});
+		matching_passwords = _.object(filtered_pairs);
+		displayPasswords(matching_passwords);
+	});
+
 
 
 });

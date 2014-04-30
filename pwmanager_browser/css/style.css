@@ -121,3 +121,34 @@ html, body {
 #step2 #passwords_table tr:nth-child(2n) td {
 	background-color: rgba(255, 255, 255, 0.75);
 }
+
+#searchbar {
+	background-color: #73BF3A;
+	text-align: right;
+	padding: 10px;
+	color: #fff;
+}
+
+#searchbar input[type=search] {
+
+	border: none;
+	border-radius: 10px;
+	background-color: rgba(255, 255, 255, 0.35);
+	padding: 4px;
+	width: 300px;
+	font-size: 12px;
+	text-align: center;
+}
+
+#searchbar input[type=search]::-webkit-input-placeholder { /* WebKit browsers */
+    color:    #fff;
+}
+#searchbar input[type=search]:-moz-placeholder { /* Mozilla Firefox 4 to 18 */
+    color:    #fff;
+}
+#searchbar input[type=search]::-moz-placeholder { /* Mozilla Firefox 19+ */
+    color:    #fff;
+}
+#searchbar input[type=search]:-ms-input-placeholder { /* Internet Explorer 10+ */
+    color:    #fff;
+}
