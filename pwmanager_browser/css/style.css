@@ -74,6 +74,10 @@ html, body {
     color:    #fff;
 }
 
+.error {
+	background-color: #E62534 !important;
+}
+
 
 #step2 h1 {
 	margin: 0px;

@@ -28,8 +28,6 @@ $(document).ready(function() {
 	$('#password').keypress(function(e) {
 		if (e.which == 13) {
 			loadFile(passwordFile, $('#password').val());
-			$('#step1').addClass("hidden");
-			$('#step2').removeClass("hidden");
 		}
 	});
 
@@ -39,16 +37,25 @@ $(document).ready(function() {
 
 
 function loadFile(file, password) {
+	console.log(file);
 	fileReader.onload = function(e) {
 		var text = fileReader.result;
 		loadJSON(text, password);
 	}
-	fileReader.readAsText(file, "utf-8");
+	try {
+		fileReader.readAsText(file, "utf-8");
+	}
+	catch (e) {
+		console.log(e);
+		showError("File invalid");
+		return;
+	}
 }
 
 
 function loadJSON(text, password) {
 	obj = JSON.parse(text);
+	console.log("Obj" + obj);
 	ver = obj['version'];
 	if (ver > MY_VERSION) {
 		alert("Version in File (" + ver + " is newer than " + MY_VERSION + ". \n Aborting.");
@@ -72,12 +79,21 @@ function decrypt_hash(data, password) {
 	});
 
 
+	foundError = false;
 	_.each(data, function(value, key) {
-		data[key] = decrypt(value, shaKey, iv, salt_length);
+		decrypted = decrypt(value, shaKey, iv, salt_length);
+		if (!decrypted) {
+			foundError = true;
+			return;
+		}
+		else data[key] = decrypted;
 	});
 
-	all_passwords = data;
-	displayPasswords(all_passwords);
+
+	if (!foundError) {
+		all_passwords = data;
+		displayPasswords(all_passwords);
+	}
 }
 
 function decrypt(base64EncodedEncryptedString, key, iv, salt_length) {
@@ -98,7 +114,8 @@ function decrypt(base64EncodedEncryptedString, key, iv, salt_length) {
 		decryptedString = decrypted.toString(CryptoJS.enc.Utf8);
 	}
 	catch (e) {
-		console.err(e);
+		showError("Invalid password");
+		return false;
 	}
 
 
@@ -108,7 +125,16 @@ function decrypt(base64EncodedEncryptedString, key, iv, salt_length) {
 	return decryptedString;
 }
 
+function showError(text) {
+	console.log("ShowError ->" + text);
+	$('#dropTarget').addClass('error');
+	$('#uploadState').removeClass('fa-download').removeClass('fa-keyboard-o').addClass('fa-exclamation-triangle');
+	$('#step1Text').text(text);
+}
+
 function displayPasswords(passwords) {
+	$('#step1').addClass("hidden");
+	$('#step2').removeClass("hidden");
 	$('#passwords_table td').remove();
 
 	var table = $('#passwords_table');
