@@ -152,3 +152,18 @@ html, body {
 #searchbar input[type=search]:-ms-input-placeholder { /* Internet Explorer 10+ */
     color:    #fff;
 }
+
+footer {
+	position: fixed;
+	bottom: 0px;
+	height: 20px;
+	text-align: center;
+	width: 100%;
+	padding: 5px;
+	background-color: rgba(0, 0, 0, 0.1);
+	font-size: 12px;
+}
+
+footer a {
+	text-decoration: none;
+}
