@@ -17,7 +17,8 @@ This tool allows you to
 * sync passwords between different instances of this application (see --server and --synchronize)
 
 New: An simple clientside webapp is included to read your passwords from a password file, if you cannot
-run ruby or this program on a machine. The webapp uses CryptoJS, JQuery and Underscore.js to do its job.
+run ruby or this program on a machine. The webapp uses CryptoJS, JQuery, Underscore.js and Fontawesome
+to do its job.
 
 I will of course not guarantee that this tool provides any security. I'm not a security expert. Have
 a look at the source yourself and see if it meets your security needs. (Don't worry it's only ~400 LOC)
