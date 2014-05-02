@@ -12,14 +12,24 @@
     <script type="text/javascript" src="js/underscore-min.js"></script>
     <script type="text/javascript" src="js/jquery-2.1.0.min.js"></script>
 
-    <script type="text/javascript" src="js/index.js"></script>
+    <script type="text/javascript" src="js/crypto.js"></script>
+    <script type="text/javascript" src="js/app.js"></script>
+    <script type="text/javascript" src="js/ui_web.js"></script>
+
+
+    <script type="text/javascript">
+    	$(document).ready(function() {
+		WebUI.onLoad();
+	});
+    </script>
+
 
     <link href="css/style.css" rel="stylesheet">
     <link href="css/font-awesome.min.css" rel="stylesheet">
     
 </head>
 <body>
-	<div id="step1" class="">
+	<div id="loginScreen" class="hidden">
 		<div id="dropTarget">
 		 <i class="fa fa-download" id="uploadState"></i>
 		 <br/>
@@ -30,24 +40,44 @@
 	</div>
 
 
-	<div id="step2" class="hidden">
-		<h1>Step 3 - These are your passwords</h1>
+	<div id="passwordList" class="hidden">
+		<h1>Passwords</h1>
 		<div id="searchbar">
-			<i class="fa fa-search"></i>
-			<input type="search" id="search" placeholder="Search for password" />
+			<i class="fa fa-search" id="search-button"></i>
+			<input type="search" id="search" placeholder="Search for password" class="hidden" />
+
 		</div>
 		<table cellspacing="0" id="passwords_table">
 		        <tr>
 				<th>Name</th>
-				<th>Password (click to uncover)</th>
 				<th></th>
 			</tr>
 		</table>
 	</div>
 
+	<div id="detailScreen" class="hidden">
+		<h1 id="passwordName">Password</h1>
+
+		<div id="passwordValue">
+			secret
+		</div>
+
+		<a href="#" class="button blue" id="copyPassword">
+		        <i class="fa fa-copy" id="copyPasswordIcon"></i>
+			Copy
+		</a>
+
+		<a href="#" class="button blue" id="backToPasswordList">
+			<i class="fa fa-chevron-left"></i>
+			Back
+		</a>
+
+	
+	</div>
+
 	<footer>
 		made by Hannes Walz - 
-		<a href="http://leuchtetgruen.de/" target="_new">Contact me</a>
+		<a href="http://leuchtetgruen.de/" target="_blank">Contact me</a>
 	</footer>
 </body>
 </html>

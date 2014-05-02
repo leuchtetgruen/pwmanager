@@ -79,7 +79,7 @@ html, body {
 }
 
 
-#step2 h1 {
+#passwordList h1, #detailScreen h1, #editScreen h1 {
 	margin: 0px;
 	
 	width: 100%;
@@ -94,31 +94,32 @@ html, body {
 }
 
 
-#step2 #passwords_table {
+#passwordList #passwords_table {
 	width: 100%;
 	padding: 20px;
 	color: #425669;
+	padding-bottom: 50px;
 }
 
-#step2 #passwords_table th {
+#passwordList #passwords_table th {
 	text-align: left;
 }
 
-#step2 #passwords_table a {
+#passwordList #passwords_table a {
 	text-decoration: none;
 }
 
 
-#step2 #passwords_table td {
+#passwordList #passwords_table td {
 	padding-top: 5px;
 	padding-bottom: 5px;
 }
 
-#step2 #passwords_table th {
+#passwordList #passwords_table th {
 	border-bottom: 1px solid #000;
 }
 
-#step2 #passwords_table tr:nth-child(2n) td {
+#passwordList #passwords_table tr:nth-child(2n) td {
 	background-color: rgba(255, 255, 255, 0.75);
 }
 
@@ -127,6 +128,11 @@ html, body {
 	text-align: right;
 	padding: 10px;
 	color: #fff;
+}
+
+#searchbar i {
+	font-size: 20px;
+	padding-left: 10px;
 }
 
 #searchbar input[type=search] {
@@ -153,6 +159,59 @@ html, body {
     color:    #fff;
 }
 
+
+#detailScreen {
+}
+
+#detailScreen #passwordValue {
+	margin-top: 20px;
+	position: relative;
+	width: 500px;
+	left: 50px;
+	height: 50px;
+	font-size: 30px;
+	line-height: 50px;
+	text-align: center;
+
+	background-color: rgba(0, 0, 0, 0.15);
+	color: #000;
+	border-radius: 15px;
+}
+
+a.button {
+	display: block;
+	width: 500px;
+	margin-top: 20px;
+	margin-right: 50px;
+	margin-left: 50px;
+	
+	height: 50px;
+
+	border-radius: 15px;
+
+	font-size: 30px;
+	line-height: 50px;
+	text-align: center;
+
+	text-decoration: none;
+	
+}
+
+a.green {
+	background-color: #73BF3A;
+	color: #fff;
+}
+
+a.red {
+	background-color: #E62534;
+	color: #fff;
+}
+
+a.blue {
+	background-color: #37465D;
+	color: #fff;
+}
+
 footer {
 	position: fixed;
 	bottom: 0px;
@@ -160,10 +219,36 @@ footer {
 	text-align: center;
 	width: 100%;
 	padding: 5px;
-	background-color: rgba(0, 0, 0, 0.1);
+	/*background-color: rgba(0, 0, 0, 0.5);*/
+	background-color: #dadada;
 	font-size: 12px;
 }
 
 footer a {
 	text-decoration: none;
+}
+
+#editScreen table {
+	position: relative;
+	margin-top: 20px;
+	width: 500px;
+	left: 50px;
+}
+
+#editScreen td {
+	height: 40px;
+}
+
+#editScreen input {
+	width: 300px;
+	height: 20px;
+	line-height: 20px;
+
+	border: none;
+	border-bottom: 1px solid #000;
+	/*border-radius: 7px;*/
+	background-color: rgba(0, 0, 0, 0);
+	padding: 4px;
+	font-size: 12px;
+	text-align: center;
 }
