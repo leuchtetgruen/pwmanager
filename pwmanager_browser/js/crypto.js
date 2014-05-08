@@ -24,7 +24,7 @@ var Crypto = {
 			decryptedString = decrypted.toString(CryptoJS.enc.Utf8);
 		}
 		catch (e) {
-			showError("Invalid password");
+			WebUI.showError("Invalid password");
 			return false;
 		}
 
@@ -92,14 +92,16 @@ var Crypto = {
 		});
 
 
-		return data;
+		if (foundError) return false;
+		else return data;
+		
 	},
 
 
 	passwordToKey : function(password) {
 		return CryptoJS.SHA256(password);
 	},
-	randomString : function(length, specialChars) {
+	randomString : function(length, useSpecialChars) {
 		var passwordChars = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
 		'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
 		'0','1','2','3','4','5','6','7','8','9',
@@ -108,7 +110,7 @@ var Crypto = {
 
 		var specialChars = ['!', '$', '%', '&', '?', '+', '*', '#', '-', '_', '.'];
 
-		var myRange = specialChars ? _.union(passwordChars, specialChars) : passwordChars;
+		var myRange = useSpecialChars ? _.union(passwordChars, specialChars) : passwordChars;
 		return _.map(_.range(length), function(value) {
 			var index = Math.floor(Math.random() * myRange.length);
 			return myRange[index];

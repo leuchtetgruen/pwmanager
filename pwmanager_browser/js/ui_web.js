@@ -106,9 +106,6 @@ var WebUI = {
 
 	displayPasswords : function(passwords, keepState) {
 		App.showScreen("passwordList");
-		//$('#loginScreen').addClass("hidden");
-		//$('#detailScreen').addClass("hidden");
-		//$('#passwordList').removeClass("hidden");
 		$('#passwords_table td').remove();
 		console.log(keepState);
 		if ((keepState==undefined) || (keepState==false)) {
