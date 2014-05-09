@@ -21,223 +21,223 @@ FILTER_KEYS = ["iv", "description", "cipher", "keygen", "version", "salt_length"
 
 # ---- FUNCTIONS ----
 class Hash
-	def hmap(&block)
-		self.inject({}){ |hash,(k,v)| hash.merge( block.call(k,v) ) }
-	end
+  def hmap(&block)
+    self.inject({}) { |hash, (k, v)| hash.merge(block.call(k, v)) }
+  end
 end
 
 class String
-	def to_hex 
-		self.each_byte.map { |b| 
-			s = b.to_s(16) 
-			s = "0#{s}" if (s.length < 2)
-			s
-		}.join
-	end
+  def to_hex
+    self.each_byte.map { |b|
+      s = b.to_s(16)
+      s = "0#{s}" if (s.length < 2)
+      s
+    }.join
+  end
 end
 
 def password_to_key(password)
-	digest = Digest::SHA256.new
-	digest.update(password)
-	return digest.digest
+  digest = Digest::SHA256.new
+  digest.update(password)
+  return digest.digest
 end
 
 def create_cipher
-	return OpenSSL::Cipher.new('AES-256-CBC')
+  return OpenSSL::Cipher.new('AES-256-CBC')
 end
 
 def encrypt(string, password, iv)
-	salt = create_random_string(DESIRED_SALT_LENGTH, true)
-	string_plus_salt = string + salt
+  salt = create_random_string(DESIRED_SALT_LENGTH, true)
+  string_plus_salt = string + salt
 
-	cipher = create_cipher
-	cipher.encrypt
-	cipher.iv = iv
-	cipher.key = password_to_key(password)
-	enc = cipher.update(string_plus_salt)
-	enc << cipher.final
+  cipher = create_cipher
+  cipher.encrypt
+  cipher.iv = iv
+  cipher.key = password_to_key(password)
+  enc = cipher.update(string_plus_salt)
+  enc << cipher.final
 
-	return Base64.encode64(enc)
+  return Base64.encode64(enc)
 end
 
 
 def decrypt_v1(data, password, iv)
-	cipher = create_cipher
-	cipher.decrypt
-	cipher.iv = iv
-	cipher.key = password_to_key(password)
+  cipher = create_cipher
+  cipher.decrypt
+  cipher.iv = iv
+  cipher.key = password_to_key(password)
 
-	dec = cipher.update(Base64.decode64(data))
-	dec << cipher.final
+  dec = cipher.update(Base64.decode64(data))
+  dec << cipher.final
 
-	return dec
+  return dec
 end
 
 def decrypt_v2(data, password, iv, salt_length)
-	cipher = create_cipher
-	cipher.decrypt
-	cipher.iv = iv
-	cipher.key = password_to_key(password)
+  cipher = create_cipher
+  cipher.decrypt
+  cipher.iv = iv
+  cipher.key = password_to_key(password)
 
-	dec = cipher.update(Base64.decode64(data))
-	dec << cipher.final
+  dec = cipher.update(Base64.decode64(data))
+  dec << cipher.final
 
-	if @debug then
-		puts "DEBUG: decrypted full text #{dec}"
-	end
+  if @debug then
+    puts "DEBUG: decrypted full text #{dec}"
+  end
 
-	return dec[0...-salt_length]
+  return dec[0...-salt_length]
 end
 
 def decrypt(data, password, iv, version, decrypt_options)
-	case version
-	when 1
-		decrypt_v1(data, password, iv)
-	when 2
-		decrypt_v2(data, password, iv, decrypt_options[:salt_length])
-	end
+  case version
+    when 1
+      decrypt_v1(data, password, iv)
+    when 2
+      decrypt_v2(data, password, iv, decrypt_options[:salt_length])
+  end
 end
 
 def write_file(data_hash, password, filename)
-	File.open(filename, 'w') { |f| f.write(encrypt_data(data_hash, password)) }
+  File.open(filename, 'w') { |f| f.write(encrypt_data(data_hash, password)) }
 end
 
 def encrypt_data(data_hash, password)
-	iv = create_cipher.random_iv
+  iv = create_cipher.random_iv
 
-	encrypted_hash = data_hash.hmap { |k,v|
-		{ k => encrypt(v, password, iv) }
-	}
+  encrypted_hash = data_hash.hmap { |k, v|
+    {k => encrypt(v, password, iv)}
+  }
 
-	encrypted_hash["iv"] = Base64.encode64(iv)
-	encrypted_hash["description"] = DESCRIPTION
-	encrypted_hash["cipher"] = CIPHER_STR
-	encrypted_hash["keygen"] = KEY_GENERATION_STR
-	encrypted_hash["version"] = VERSION
-	encrypted_hash["salt_length"] = DESIRED_SALT_LENGTH
+  encrypted_hash["iv"] = Base64.encode64(iv)
+  encrypted_hash["description"] = DESCRIPTION
+  encrypted_hash["cipher"] = CIPHER_STR
+  encrypted_hash["keygen"] = KEY_GENERATION_STR
+  encrypted_hash["version"] = VERSION
+  encrypted_hash["salt_length"] = DESIRED_SALT_LENGTH
 
 
-	encrypted_hash.to_json
+  encrypted_hash.to_json
 end
 
 def read_file(filename, password)
-	s_json = File.read(filename)
-	return read_string(s_json, password)
+  s_json = File.read(filename)
+  return read_string(s_json, password)
 end
 
 def read_string(string, password)
-	encrypted_hash = JSON.parse(string)
+  encrypted_hash = JSON.parse(string)
 
-	file_version = encrypted_hash["version"]
-	if  (file_version >  VERSION) then
-		puts "File-Format-Version (#{file_version}) is newer than this version #{VERSION}. Please update to read this file"
-		exit
-	elsif (file_version < VERSION) then
-		puts "Warning: Using an older version of this software in the file (#{file_version}). You currently use version #{VERSION}"
-	end
+  file_version = encrypted_hash["version"]
+  if  (file_version > VERSION) then
+    puts "File-Format-Version (#{file_version}) is newer than this version #{VERSION}. Please update to read this file"
+    exit
+  elsif (file_version < VERSION) then
+    puts "Warning: Using an older version of this software in the file (#{file_version}). You currently use version #{VERSION}"
+  end
 
-	cipher = create_cipher
-	iv = Base64.decode64(encrypted_hash['iv'])
-	salt_length = encrypted_hash['salt_length'];
+  cipher = create_cipher
+  iv = Base64.decode64(encrypted_hash['iv'])
+  salt_length = encrypted_hash['salt_length'];
 
-	encrypted_hash = encrypted_hash.reject { |k,v | 
-		FILTER_KEYS.include?(k)
-	}
+  encrypted_hash = encrypted_hash.reject { |k, v|
+    FILTER_KEYS.include?(k)
+  }
 
-	decrypted_hash = encrypted_hash.hmap { |k,v|
-		{ k => decrypt(v, password, iv, file_version, {salt_length: salt_length}) }
-	}
+  decrypted_hash = encrypted_hash.hmap { |k, v|
+    {k => decrypt(v, password, iv, file_version, {salt_length: salt_length})}
+  }
 
-	return decrypted_hash
+  return decrypted_hash
 end
 
 def read_password_from_keyboard(prompt="Password:", silent=true)
-	system "stty -echo" if silent
-	print prompt
-	pw = $stdin.gets
-	system "stty echo" if silent
-	puts ""
-	return pw.strip
+  system "stty -echo" if silent
+  print prompt
+  pw = $stdin.gets
+  system "stty echo" if silent
+  puts ""
+  return pw.strip
 end
 
 
 def create_random_string(length=18, special_chars=true)
-	possible = (('A'..'Z').to_a + ('a' .. 'z').to_a + (0..9).to_a)
-	possible = possible | "!$%&?+*#-_.".split("") if special_chars
-	api_string = (0...length).map { |n| possible.sample }.join
+  possible = (('A'..'Z').to_a + ('a' .. 'z').to_a + (0..9).to_a)
+  possible = possible | "!$%&?+*#-_.".split("") if special_chars
+  api_string = (0...length).map { |n| possible.sample }.join
 end
 
 def to_clipboard(string, type)
-	case type
-	when :osx then
-		system "echo \"#{string}\" | pbcopy"
-	when :x11 then
-		system "echo \"#{string}\" | xsel -i -b"
-		system "echo \"#{string}\" | xsel -i -p"
-	when :windows then
-		system "echo \"#{string}\" | clip"
-	end
+  case type
+    when :osx then
+      system "echo \"#{string}\" | pbcopy"
+    when :x11 then
+      system "echo \"#{string}\" | xsel -i -b"
+      system "echo \"#{string}\" | xsel -i -p"
+    when :windows then
+      system "echo \"#{string}\" | clip"
+  end
 end
 
 def read_from_clipboard(type)
-	case type
-	when :osx then
-		system("echo `pbpaste` > tmp")
-	when :x11 then
-		system("xsel -o > tmp")
-	when :windows then
-		puts "Sorry reading data from the clipboard is currently not supported for windows :-("
-		exit
-	end
-	contents = File.read("tmp").strip
-	system("rm tmp")
-	return contents
+  case type
+    when :osx then
+      system("echo `pbpaste` > tmp")
+    when :x11 then
+      system("xsel -o > tmp")
+    when :windows then
+      puts "Sorry reading data from the clipboard is currently not supported for windows :-("
+      exit
+  end
+  contents = File.read("tmp").strip
+  system("rm tmp")
+  return contents
 end
 
 def server(data_hash, password)
-	encrypted_data = encrypt_data(data_hash, password)
-	s = TCPServer.new(PORT)
-	puts "Listening... (Press CTRL+C to stop)"
+  encrypted_data = encrypt_data(data_hash, password)
+  s = TCPServer.new(PORT)
+  puts "Listening... (Press CTRL+C to stop)"
 
-	addresses = Socket.ip_address_list.select { |address|
-		!([:ipv4_loopback?, :ipv6_linklocal?, :ipv6_loopback?].any? { |sym| address.__send__ sym })
-	}.map { |address| address.ip_address }.join(", ")
-	puts "You can connect to any of these IP addresses on port #{PORT}: #{addresses}"
+  addresses = Socket.ip_address_list.select { |address|
+    !([:ipv4_loopback?, :ipv6_linklocal?, :ipv6_loopback?].any? { |sym| address.__send__ sym })
+  }.map { |address| address.ip_address }.join(", ")
+  puts "You can connect to any of these IP addresses on port #{PORT}: #{addresses}"
 
 
-	while (session = s.accept) do
-		puts "Sending data to #{session.addr.last} ..."
-		session.puts encrypted_data
-		session.close
-	end
-	puts "Done."
+  while (session = s.accept) do
+    puts "Sending data to #{session.addr.last} ..."
+    session.puts encrypted_data
+    session.close
+  end
+  puts "Done."
 end
 
 def synchronize(hostname, my_data_hash, password)
-	socket = TCPSocket.open(hostname, PORT)
-	encrypted_data  = socket.gets.strip
-	socket.close
+  socket = TCPSocket.open(hostname, PORT)
+  encrypted_data = socket.gets.strip
+  socket.close
 
-	their_data_hash = read_string(encrypted_data, password)
+  their_data_hash = read_string(encrypted_data, password)
 
-	their_data_hash.each { |k, v|
-		if (my_data_hash.keys.include?(k) && (my_data_hash[k]!=v)) then
-			puts "Already got different password for #{k}"
-			print "Overwrite? (Y/N)"
-			decision = STDIN.getch.upcase
-			if (decision=="Y") then
-				puts "OK. overwriting"
-				my_data_hash[k] = v
-			else
-				puts "OK. keeping my password"
-			end
-		else
-			puts "Importing #{k}"
-			my_data_hash[k] = v
-		end
-	}
+  their_data_hash.each { |k, v|
+    if (my_data_hash.keys.include?(k) && (my_data_hash[k]!=v)) then
+      puts "Already got different password for #{k}"
+      print "Overwrite? (Y/N)"
+      decision = STDIN.getch.upcase
+      if (decision=="Y") then
+        puts "OK. overwriting"
+        my_data_hash[k] = v
+      else
+        puts "OK. keeping my password"
+      end
+    else
+      puts "Importing #{k}"
+      my_data_hash[k] = v
+    end
+  }
 
-	return my_data_hash
+  return my_data_hash
 end
 
 
@@ -249,181 +249,191 @@ parser = OptionParser.new do |opts|
   opts.banner = "Usage: pwmanager [options]"
 
   opts.on("-c", "--create key", "Create a new password for the given key") do |key|
-	  options[:operation] = :create
-	  options[:key] = key
+    options[:operation] = :create
+    options[:key] = key
   end
   opts.on("-s", "--set key", "Add a new password or overwrite an old one") do |key|
-	  options[:operation] = :set
-	  options[:key] = key
+    options[:operation] = :set
+    options[:key] = key
   end
   opts.on("-r", "--read [key]", "Add a new password or overwrite an old one") do |key|
-	  options[:operation] = :read
-	  options[:key] = key
+    options[:operation] = :read
+    options[:key] = key
   end
   opts.on("-d", "--delete key", "Remove a key from the password database") do |key|
-	  options[:operation] = :delete
-	  options[:key] = key
+    options[:operation] = :delete
+    options[:key] = key
   end
-  opts.on('-l', '--list', "List all available sites/keys") do 
-	  options[:operation] = :list
+  opts.on('-l', '--list', "List all available sites/keys") do
+    options[:operation] = :list
   end
-  opts.on("-g", "--generate", "Generate a password") do 
-	  options[:operation] = :generate
+  opts.on("-g", "--generate", "Generate a password") do
+    options[:operation] = :generate
   end
-  opts.on("--server", "Start a server so others can synchronize") do 
-	  options[:operation] = :server
+  opts.on("--server", "Start a server so others can synchronize") do
+    options[:operation] = :server
   end
   opts.on("--synchronize server", "Download entries from other instance") do |hostname|
-	  options[:operation] = :synchronize
-	  options[:hostname] = hostname
+    options[:operation] = :synchronize
+    options[:hostname] = hostname
   end
-  opts.on("--change-master-password", "Change the master password") do 
-	  options[:operation] = :changepassword
+  opts.on("--change-master-password", "Change the master password") do
+    options[:operation] = :changepassword
+  end
+
+  opts.on("--create-file", "Create a new password file") do
+    options[:operation] = :create_file
   end
 
   # FLAGS
   opts.on("--no-special-chars", "Avoid special characters (that is non numbers and letters) in generated password") do
-	  options[:no_special_chars] = true
+    options[:no_special_chars] = true
   end
   opts.on("--length password_length", "Password length for password creation") do |length|
-	  options[:length] = length.to_i
+    options[:length] = length.to_i
   end
   opts.on("-f", "--file [file]", "Password file to use rather than $PASSWORDFILE") do |f|
-	  options[:password_file] = f
+    options[:password_file] = f
   end
   opts.on("--password password", "Masterpassword (instead of reading it from keyboard)") do |password|
-	  options[:master_password] = password
+    options[:master_password] = password
   end
   opts.on("--clipboard [type]", "Read password from clipboard or write it to the clipboard") do |type|
-	  options[:clipboard] = true
+    options[:clipboard] = true
 
-	  clipboard_type = if type.nil? then
-				   if RUBY_PLATFORM =~ /darwin/i then
-					   :osx
-				   elsif RUBY_PLATFORM =~ /linux/i then
-					   :x11
-				   elsif RUBY_PLATFORM =~ /mswin|mingw|cygwin/ then
-					   :windows
-				   else
-					   # OSX is the default if no other os could be detected
-					   :osx
-				   end
-			   else
-				   type.to_sym
-			   end
-	  puts "Detected '#{clipboard_type}' as your OS/Desktop Environment/Window Server"
-	  options[:clipboard_type] = clipboard_type
+    clipboard_type = if type.nil? then
+                       if RUBY_PLATFORM =~ /darwin/i then
+                         :osx
+                       elsif RUBY_PLATFORM =~ /linux/i then
+                         :x11
+                       elsif RUBY_PLATFORM =~ /mswin|mingw|cygwin/ then
+                         :windows
+                       else
+                         # OSX is the default if no other os could be detected
+                         :osx
+                       end
+                     else
+                       type.to_sym
+                     end
+    puts "Detected '#{clipboard_type}' as your OS/Desktop Environment/Window Server"
+    options[:clipboard_type] = clipboard_type
   end
   opts.on("--aloud", "Echo keyboard input (thus showing passwords your type)") do |aloud|
-	  options[:silent] = false
+    options[:silent] = false
   end
   opts.on("--debug", "Turn on debug output") do |debug|
-	  @debug = true
+    @debug = true
   end
 end
 
 parser.parse!
 
 if (options[:operation].nil?) then
-	puts parser.help
-	exit
+  puts parser.help
+  exit
 end
 
 
 password_file = options[:password_file] || ENV['PASSWORDFILE']
 
 if (options[:operation]==:generate) then
-	pw = create_random_string(options[:length] || 18, !options[:no_special_chars])
-	if (options[:clipboard]) then
-		to_clipboard(pw, options[:clipboard_type])
-	else
-		puts pw
-	end
-	exit
+  pw = create_random_string(options[:length] || 18, !options[:no_special_chars])
+  if (options[:clipboard]) then
+    to_clipboard(pw, options[:clipboard_type])
+  else
+    puts pw
+  end
+  exit
 end
 
 if (options[:operation]==:list) then
-	json_data = JSON.parse(File.read(password_file))
-	puts "These sites/keys are available:\n\n"
-	puts json_data.reject { |k,v| FILTER_KEYS.include?(k) }.keys.join("\n")
-	exit
+  json_data = JSON.parse(File.read(password_file))
+  puts "These sites/keys are available:\n\n"
+  puts json_data.reject { |k, v| FILTER_KEYS.include?(k) }.keys.join("\n")
+  exit
 
 end
 
 
 if password_file.nil? then
-	puts "You need to either provide a password-file via the --file (-f) option or set the $PASSWORDFILE environment-variable"
-	exit
+  puts "You need to either provide a password-file via the --file (-f) option or set the $PASSWORDFILE environment-variable"
+  exit
 end
 
 data = {}
 master_password = options[:master_password] || read_password_from_keyboard("Master password:", options[:silent])
 
 
-
 if File.exist?(password_file) then
-	begin
-		data = read_file(password_file, master_password)
-	rescue
-		puts "Invalid password"
-		exit 1
-	end
+  if options[:operation] == :create_file
+    File.new(password_file, 'w') unless File.exist?(password_file)
+  else
+    begin
+      data = read_file(password_file, master_password)
+    rescue
+      puts "Invalid password"
+      exit 1
+    end
+  end
 end
 
 case options[:operation]
-when :create
-	pw = create_random_string(options[:length] || 18, !options[:no_special_chars])
-	data[options[:key]] = pw
-	puts "Successfully created password for #{options[:key]}"
-	if (options[:clipboard]) then
-		to_clipboard(pw, options[:clipboard_type])
-		puts "You'll find the password in your clipboard"
-	else
-		puts pw
-	end
-when :set
-	if (options[:clipboard]) then
-		pw = read_from_clipboard(options[:clipboard_type])
-		data[options[:key]] = pw
-	else
-		pw1 = read_password_from_keyboard("Password:", options[:silent]);
-		pw2 = read_password_from_keyboard("Password (repeat):", options[:silent])
-		unless pw1 == pw2 then
-			puts "The passwords are not the same"
-			exit
-		end
-		data[options[:key]] = pw1
-	end
-when :read
-	if (options[:clipboard]) then
-		to_clipboard(data[options[:key]], options[:clipboard_type])
-	else
-		puts "Your password for #{options[:key]} is #{data[options[:key]]}"
-	end
-when :delete
-	key  = options[:key]
-	puts "Do you really want to delete the key #{key} (Y/N)"
-	decision = STDIN.getch.upcase
-	if (decision == "Y") then
-		puts "Key #{key} deleted"
-		data.delete(key)
-	else
-		puts "Alright. Not deleting #{key}"
-	end
-when :server
-	server(data, master_password)
-when :synchronize
-	their_password = read_password_from_keyboard("Remote master password:", options[:silent])
-	synchronize(options[:hostname], data, their_password)
-when :changepassword
-	master_password1 = read_password_from_keyboard("New master password:", options[:silent])
-	master_password2 = read_password_from_keyboard("New master password (repeat):", options[:silent])
-	if (master_password1 != master_password2) then
-		puts "The passwords are not the same"
-		exit
-	else
-		master_password = master_password1
-	end
+  when :create_file
+    puts 'Creating new file'
+    write_file({}, master_password, password_file)
+  when :create
+    pw = create_random_string(options[:length] || 18, !options[:no_special_chars])
+    data[options[:key]] = pw
+    puts "Successfully created password for #{options[:key]}"
+    if (options[:clipboard]) then
+      to_clipboard(pw, options[:clipboard_type])
+      puts "You'll find the password in your clipboard"
+    else
+      puts pw
+    end
+  when :set
+    if (options[:clipboard]) then
+      pw = read_from_clipboard(options[:clipboard_type])
+      data[options[:key]] = pw
+    else
+      pw1 = read_password_from_keyboard("Password:", options[:silent]);
+      pw2 = read_password_from_keyboard("Password (repeat):", options[:silent])
+      unless pw1 == pw2 then
+        puts "The passwords are not the same"
+        exit
+      end
+      data[options[:key]] = pw1
+    end
+  when :read
+    if (options[:clipboard]) then
+      to_clipboard(data[options[:key]], options[:clipboard_type])
+    else
+      puts "Your password for #{options[:key]} is #{data[options[:key]]}"
+    end
+  when :delete
+    key = options[:key]
+    puts "Do you really want to delete the key #{key} (Y/N)"
+    decision = STDIN.getch.upcase
+    if (decision == "Y") then
+      puts "Key #{key} deleted"
+      data.delete(key)
+    else
+      puts "Alright. Not deleting #{key}"
+    end
+  when :server
+    server(data, master_password)
+  when :synchronize
+    their_password = read_password_from_keyboard("Remote master password:", options[:silent])
+    synchronize(options[:hostname], data, their_password)
+  when :changepassword
+    master_password1 = read_password_from_keyboard("New master password:", options[:silent])
+    master_password2 = read_password_from_keyboard("New master password (repeat):", options[:silent])
+    if (master_password1 != master_password2) then
+      puts "The passwords are not the same"
+      exit
+    else
+      master_password = master_password1
+    end
 end
 
 write_file(data, master_password, password_file)
