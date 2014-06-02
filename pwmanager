@@ -7,6 +7,7 @@ require 'json'
 require 'optparse'
 require 'socket'
 require 'io/console'
+require_relative "pwmanager_test"
 
 PORT = 2000
 DESCRIPTION = "This JSON file contains Base64-Representations of AES-256-CBC-encrypted passwords. There is a salt appended to the passwords before encrypting them. The length of the salt is included in the SALT_LENGTH field. The IV is contained base64-encoded in this file. The key is the SHA256-Digest of your master-password."
@@ -240,6 +241,22 @@ def synchronize(hostname, my_data_hash, password)
 	return my_data_hash
 end
 
+def has_username(str)
+	return false unless str.include? ":"
+	parts = str.split(":")
+	return false if (parts.size < 2)
+	return (parts.first.length > 0) && (parts[1].length > 0)
+end
+
+def extract_username(str)
+	raise(ArgumentError, "#{str} does not contain a username") if (!has_username(str))
+	str.split(":").first
+end
+
+def extract_password(str)
+	has_username(str) ? str.split(":")[1..-1].join(":") : str
+end
+
 
 # ---- END FUNCTIONS ----
 
@@ -319,6 +336,10 @@ parser = OptionParser.new do |opts|
   end
   opts.on("--debug", "Turn on debug output") do |debug|
 	  @debug = true
+  end
+  opts.on("--test", "Run tests on this project") do
+	  Test::Unit::AutoRunner.run
+	  exit
   end
 end
 

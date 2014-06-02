@@ -1,5 +1,6 @@
 var App = {
 	passwordFile : null,
+	password : null,
 	loadedPasswords : {},
 	screens : [],
 

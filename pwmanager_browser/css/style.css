@@ -79,7 +79,7 @@ html, body {
 }
 
 
-#passwordList h1, #detailScreen h1, #editScreen h1 {
+#passwordList h1, #detailScreen h1{
 	margin: 0px;
 	
 	width: 100%;
