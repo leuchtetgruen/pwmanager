@@ -341,6 +341,12 @@ parser = OptionParser.new do |opts|
 	  Test::Unit::AutoRunner.run
 	  exit
   end
+  opts.on("--username-only" , "Reads the username only") do |uname|
+	  options[:username_only] = true
+  end
+  opts.on("--password-only", "Reads the password only") do
+	  options[:password_only] = true
+  end
 end
 
 parser.parse!
@@ -393,8 +399,14 @@ end
 
 case options[:operation]
 when :create
+	username = unless options[:without_username] then
+			uname = read_password_from_keyboard("Username (leave empty to omit):", false)
+			(uname.strip.length > 0) ? uname : nil
+		   else
+			  nil 
+		   end
 	pw = create_random_string(options[:length] || 18, !options[:no_special_chars])
-	data[options[:key]] = pw
+	data[options[:key]] = username.nil? ? pw : "#{username}:#{pw}"
 	puts "Successfully created password for #{options[:key]}"
 	if (options[:clipboard]) then
 		to_clipboard(pw, options[:clipboard_type])
@@ -407,19 +419,49 @@ when :set
 		pw = read_from_clipboard(options[:clipboard_type])
 		data[options[:key]] = pw
 	else
+		username = unless options[:without_username] then
+				   uname = read_password_from_keyboard("Username (leave empty to omit):", false)
+				   (uname.strip.length > 0) ? uname : nil
+			   else
+				   nil 
+			   end
 		pw1 = read_password_from_keyboard("Password:", options[:silent]);
 		pw2 = read_password_from_keyboard("Password (repeat):", options[:silent])
 		unless pw1 == pw2 then
 			puts "The passwords are not the same"
 			exit
 		end
-		data[options[:key]] = pw1
+		data[options[:key]] = username.nil? ? pw1 : "#{username}:#{pw1}"
+		#data[options[:key]] = pw1
 	end
 when :read
+	full_read_value = data[options[:key]]
+	read_value = if options[:username_only] then
+			     unless has_username(full_read_value) then
+				     puts "The account does not contain a username."
+				     exit
+			     end
+			     extract_username(full_read_value)
+		     elsif options[:password_only]
+			     extract_password(full_read_value)
+		     else
+			     full_read_value
+		     end
 	if (options[:clipboard]) then
-		to_clipboard(data[options[:key]], options[:clipboard_type])
+		to_clipboard(read_value, options[:clipboard_type])
 	else
-		puts "Your password for #{options[:key]} is #{data[options[:key]]}"
+		if options[:username_only] then
+			# show only username
+			puts "Your username for #{options[:key]} is #{read_value}"
+		elsif options[:password_only] || !has_username(full_read_value) then
+			# show only password
+			puts "Your password for #{options[:key]} is #{read_value}"
+		else
+			# show both username and password
+			puts "Your account for #{options[:key]}"
+			puts "Username : \t #{extract_username(full_read_value)}"
+			puts "Password : \t #{extract_password(full_read_value)}"
+		end
 	end
 when :delete
 	key  = options[:key]
@@ -448,3 +490,4 @@ when :changepassword
 end
 
 write_file(data, master_password, password_file)
+exit
